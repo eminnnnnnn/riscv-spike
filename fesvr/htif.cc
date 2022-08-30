@@ -6,6 +6,7 @@
 #include "platform.h"
 #include "byteorder.h"
 #include "trap.h"
+#include "rpc_proxy.h"
 #include <algorithm>
 #include <assert.h>
 #include <vector>
@@ -314,7 +315,11 @@ void htif_t::parse_arguments(int argc, char ** argv)
         break;
       case HTIF_LONG_OPTIONS_OPTIND + 5:
         line_size = atoi(optarg);
-
+        break;
+      case HTIF_LONG_OPTIONS_OPTIND + 6:
+        // if rpc_proxy is enabled, it will always be the first in the dynamic_devices
+        // so it will be number 2 (after syscall_proxy and bcd)
+        dynamic_devices.insert(dynamic_devices.begin(), new rpc_proxy_t(this));
         break;
       case '?':
         if (!opterr)
@@ -350,9 +355,13 @@ void htif_t::parse_arguments(int argc, char ** argv)
           c = HTIF_LONG_OPTIONS_OPTIND + 4;
           optarg = optarg + 9;
         }
-        else if(arg.find("+signature-granularity=")==0){
-            c = HTIF_LONG_OPTIONS_OPTIND + 5;
-            optarg = optarg + 23;
+        else if (arg.find("+signature-granularity=") == 0) {
+          c = HTIF_LONG_OPTIONS_OPTIND + 5;
+          optarg = optarg + 23;
+        }
+        else if (arg.find("+rpc-proxy") == 0) {
+          c = HTIF_LONG_OPTIONS_OPTIND + 6;
+          optarg = nullptr; // no argument required
         }
         else if (arg.find("+permissive-off") == 0) {
           if (opterr)
